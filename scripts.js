@@ -46,26 +46,31 @@ function log(msg) {
 function createPeerConnection() {
     const TURN_USER = turnUserInput.value.trim();
     const TURN_PASS = turnPassInput.value.trim();
+
+    console.log(TURN_USER, TURN_PASS);
+
     const SIGNALING = signalingUrlInput.value.trim();
     const iceServers = [{
-            urls: `stun:${new URL(SIGNALING).hostname}:3478`
+            urls: `stun:185.231.181.109:3478`
         }, // tries STUN via same host as TURN (if accessible)
     ];
     if (TURN_USER && TURN_PASS) {
         iceServers.push({
             urls: [
-                `turn:${new URL(SIGNALING).hostname}:3478?transport=udp`,
-                `turn:${new URL(SIGNALING).hostname}:3478?transport=tcp`
+                `turn:185.231.181.109:3478?transport=udp`,
+                `turn:185.231.181.109:3478?transport=tcp`
             ],
             username: TURN_USER,
             credential: TURN_PASS
         });
     }
 
-    console.log(iceServers)
     const config = {
-        iceServers
+        iceServers,
+        iceTransportPolicy: "relay"
     };
+
+    console.log(config);
 
     log("creating RTCPeerConnection with ICE servers: " + JSON.stringify(iceServers.map(s => s.urls || s)));
     const _pc = new RTCPeerConnection(config);
