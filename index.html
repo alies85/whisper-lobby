@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>WebRTC Lobby (Offer List) — Demo</title>
+    <!-- Socket.IO client from CDN -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Left: lobby controls & offer list -->
+        <div class="card">
+            <div class="top-row">
+                <div>
+                    <h1>Lobby / Offer List</h1>
+                    <p class="small">وضعیت اتصال signaling و شناسهٔ خودت پایین نمایش داده می‌شه.</p>
+                </div>
+                <div>
+                    <div class="badge" id="myIdBadge">—</div>
+                </div>
+            </div>
+
+            <div style="margin-top:12px">
+                <div style="display:flex;gap:8px;align-items:center">
+                    <button id="btnStartLocal">استارت دوربین/میکروفن</button>
+                    <button id="btnCreateOffer" class="ghost">آفر بذار (Wait)</button>
+                    <button id="btnStopOffer" class="ghost" disabled>بردار آفر</button>
+                </div>
+                <p class="small" style="margin-top:8px">برای گذاشتن آفر ابتدا دوربین/میکروفن رو استارت کن. آفر توی سرور
+                    می‌مونه تا کسی انتخابش کنه یا disconnect شی.</p>
+            </div>
+
+            <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:12px 0" />
+
+            <h1 style="font-size:15px">آفرهای فعال</h1>
+            <p class="small">برای اتصال، روی یکی از آیتم‌ها کلیک کن.</p>
+            <div id="offers" class="offer-list"></div>
+
+            <div class="log" id="log"></div>
+        </div>
+
+        <!-- Right: video area -->
+        <div class="card">
+            <div class="video-wrap">
+                <div style="display:flex;gap:12px;align-items:center;justify-content:space-between">
+                    <h1>ویدئو</h1>
+                    <div class="status" id="status">Status: disconnected</div>
+                </div>
+
+                <video id="localVideo" autoplay muted playsinline></video>
+                <video id="remoteVideo" autoplay playsinline></video>
+
+                <div class="controls">
+                    <label class="meta">Signaling:
+                        <input id="inputSignaling" class="small-input" value="wss://turn.aliesmatparast.ir:8080"
+                            style="min-width:280px" />
+                    </label>
+                    <label class="meta">TURN user:
+                        <input id="inputTurnUser" class="small-input" value="admin" />
+                    </label>
+                    <label class="meta">TURN pass:
+                        <input id="inputTurnPass" class="small-input" value="M@shati1404" />
+                    </label>
+                    <button id="btnConnectSignal" class="ghost">Connect signaling</button>
+                </div>
+
+                <p class="small" style="margin-top:8px">توضیحات: مرورگر خودش از STUN/TURN به عنوان fallback استفاده
+                    می‌کنه؛ فقط یوزنیم/پسوردهات رو درست ست کن.</p>
+            </div>
+        </div>
+
+        <footer>نسخه دمو — برای production حتما auth و validation اضافه کن</footer>
+    </div>
+
+</body>
+
+<script src="scripts.js"></script>
+</html>
