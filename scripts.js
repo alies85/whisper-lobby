@@ -49,16 +49,15 @@ function createPeerConnection() {
 
     console.log(TURN_USER, TURN_PASS);
 
-    const SIGNALING = signalingUrlInput.value.trim();
     const iceServers = [{
-            urls: `stun:185.231.181.109:3478`
+            urls: `stun:turn.aliesmatparast.ir:3478`
         }, // tries STUN via same host as TURN (if accessible)
     ];
     if (TURN_USER && TURN_PASS) {
         iceServers.push({
             urls: [
-                `turn:185.231.181.109:3478?transport=udp`,
-                `turn:185.231.181.109:3478?transport=tcp`
+                `turn:turn.aliesmatparast.ir:3478?transport=udp`,
+                `turn:turn.aliesmatparast.ir:3478?transport=tcp`
             ],
             username: TURN_USER,
             credential: TURN_PASS
