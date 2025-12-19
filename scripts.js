@@ -98,15 +98,20 @@ function createPeerConnection() {
     const TURN_USER = turnUserInput.value.trim();
     const TURN_PASS = turnPassInput.value.trim();
 
-    const iceServers = [{
+    const iceServers = [
+        {
+            // STUN enabled on your coturn (keep it for srflx / better p2p when policy != relay)
             urls: `stun:turn.aliesmatparast.ir:3478`
-        }, // tries STUN via same host as TURN (if accessible)
+        }
     ];
+
     if (TURN_USER && TURN_PASS) {
         iceServers.push({
             urls: [
                 `turn:turn.aliesmatparast.ir:3478?transport=udp`,
-                `turn:turn.aliesmatparast.ir:3478?transport=tcp`
+                `turn:turn.aliesmatparast.ir:3478?transport=tcp`,
+                // If coturn TLS is enabled (tls-listening-port=5349 + cert/pkey)
+                `turns:turn.aliesmatparast.ir:5349?transport=tcp`
             ],
             username: TURN_USER,
             credential: TURN_PASS
@@ -118,7 +123,11 @@ function createPeerConnection() {
         iceTransportPolicy: "relay"
     };
 
-    console.log(config);
+    if (config.iceTransportPolicy === 'relay' && (!TURN_USER || !TURN_PASS)) {
+        const msg = 'iceTransportPolicy=relay است ولی TURN user/pass وارد نشده.';
+        log(msg);
+        throw new Error(msg);
+    }
 
     log("creating RTCPeerConnection with ICE servers: " + JSON.stringify(iceServers.map(s => s.urls || s)));
     const _pc = new RTCPeerConnection(config);
@@ -170,9 +179,7 @@ function createPeerConnection() {
         log("local ICE candidate generated");
 
         const c = e.candidate;
-        if (isRelayCandidate(c)) {
-        log('relay candidate gathered (TURN OK): ' + c.candidate);
-        }
+        if (isRelayCandidate(c)) log('relay candidate gathered (TURN OK): ' + c.candidate);
 
             // If we know who to send to use socket directly
             if (currentPeerId) {
