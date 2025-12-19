@@ -47,6 +47,52 @@ function isRelayCandidate(candidate) {
     return typeof line === 'string' && /\btyp\s+relay\b/i.test(line);
 }
 
+async function logSelectedCandidatePair(_pc) {
+    try {
+        const stats = await _pc.getStats();
+
+        let pair = null;
+        stats.forEach((r) => {
+            if (r.type === 'candidate-pair' && (r.selected || r.nominated) && r.state === 'succeeded') {
+                pair = r;
+            }
+        });
+
+        // Chrome often exposes selectedCandidatePairId on the transport report.
+        if (!pair) {
+            let selectedId = null;
+            stats.forEach((r) => {
+                if (r.type === 'transport' && r.selectedCandidatePairId) selectedId = r.selectedCandidatePairId;
+            });
+            if (selectedId && typeof stats.get === 'function') pair = stats.get(selectedId);
+        }
+
+        if (!pair) {
+            log('ICE stats: no selected candidate pair');
+            return;
+        }
+
+        const local = typeof stats.get === 'function' ? stats.get(pair.localCandidateId) : null;
+        const remote = typeof stats.get === 'function' ? stats.get(pair.remoteCandidateId) : null;
+
+        const summary = {
+            pairState: pair.state,
+            localType: local?.candidateType,
+            localAddress: local?.address || local?.ip,
+            localPort: local?.port,
+            remoteType: remote?.candidateType,
+            remoteAddress: remote?.address || remote?.ip,
+            remotePort: remote?.port,
+            currentRoundTripTime: pair.currentRoundTripTime,
+            availableOutgoingBitrate: pair.availableOutgoingBitrate
+        };
+
+        log('ICE selected pair: ' + JSON.stringify(summary));
+    } catch (e) {
+        log('ICE stats error: ' + (e?.message || e));
+    }
+}
+
 // create RTCPeerConnection with TURN/STUN from inputs
 function createPeerConnection() {
     const TURN_USER = turnUserInput.value.trim();
@@ -83,6 +129,9 @@ function createPeerConnection() {
 
     _pc.oniceconnectionstatechange = () => {
         log("PC iceConnectionState: " + _pc.iceConnectionState);
+        if (_pc.iceConnectionState === 'failed' || _pc.iceConnectionState === 'connected' || _pc.iceConnectionState === 'completed') {
+            logSelectedCandidatePair(_pc);
+        }
     };
 
     _pc.onsignalingstatechange = () => {
