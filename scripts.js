@@ -42,12 +42,15 @@ function log(msg) {
     logEl.innerText = `[${time}] ${msg}\n` + logEl.innerText;
 }
 
+function isRelayCandidate(candidate) {
+    const line = candidate?.candidate;
+    return typeof line === 'string' && /\btyp\s+relay\b/i.test(line);
+}
+
 // create RTCPeerConnection with TURN/STUN from inputs
 function createPeerConnection() {
     const TURN_USER = turnUserInput.value.trim();
     const TURN_PASS = turnPassInput.value.trim();
-
-    console.log(TURN_USER, TURN_PASS);
 
     const iceServers = [{
             urls: `stun:turn.aliesmatparast.ir:3478`
@@ -74,6 +77,31 @@ function createPeerConnection() {
     log("creating RTCPeerConnection with ICE servers: " + JSON.stringify(iceServers.map(s => s.urls || s)));
     const _pc = new RTCPeerConnection(config);
 
+    _pc.onicegatheringstatechange = () => {
+        log("PC iceGatheringState: " + _pc.iceGatheringState);
+    };
+
+    _pc.oniceconnectionstatechange = () => {
+        log("PC iceConnectionState: " + _pc.iceConnectionState);
+    };
+
+    _pc.onsignalingstatechange = () => {
+        log("PC signalingState: " + _pc.signalingState);
+    };
+
+    _pc.onicecandidateerror = (ev) => {
+        // Browser-dependent fields; keep it defensive.
+        const details = {
+            url: ev?.url,
+            errorCode: ev?.errorCode,
+            errorText: ev?.errorText,
+            hostCandidate: ev?.hostCandidate,
+            address: ev?.address,
+            port: ev?.port
+        };
+        log("ICE candidate error: " + JSON.stringify(details));
+    };
+
     // attach local tracks
     if (localStream) {
         for (const t of localStream.getTracks()) _pc.addTrack(t, localStream);
@@ -90,12 +118,12 @@ function createPeerConnection() {
     // ICE candidates
     _pc.onicecandidate = (e) => {
         if (e.candidate) {
-	    log("local ICE candidate generated");
+        log("local ICE candidate generated");
 
-	    const c = e.candidate;
-	    if (c && c.type === 'relay') {
-		log('TURN fallback used at' + JSON.stringify(c));
-	    }
+        const c = e.candidate;
+        if (isRelayCandidate(c)) {
+        log('relay candidate gathered (TURN OK): ' + c.candidate);
+        }
 
             // If we know who to send to use socket directly
             if (currentPeerId) {
@@ -107,6 +135,10 @@ function createPeerConnection() {
                 // buffer until we know peer id (typical for offerer before someone selects)
                 bufferedCandidates.push(c);
             }
+        }
+        else {
+            // End of gathering
+            log("ICE gathering complete (null candidate)");
         }
     };
 
